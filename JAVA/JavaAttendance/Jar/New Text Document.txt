@@ -1,0 +1,190 @@
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.*;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JLabel;
+import javax.swing.JTextField;
+import javax.swing.JButton;
+import javax.swing.JOptionPane;
+import javax.swing.JPasswordField;
+
+public class loginForm implements ActionListener{
+   private String userid="";
+   private String pass="";
+   private String url="JDBC:ODBC:Student";
+   private Connection cn=null;
+   String username="";
+   String password="";
+
+
+   JLabel jlbUserName, jlbPass;
+   JTextField jtfUserName;
+   JPasswordField jpfPass;
+   JButton jbnOK, jbnCancel, jbnRegister, jbnExit;
+   JFrame loginFrame;
+   JPanel txt1panel = new JPanel();
+   JPanel txt2panel = new JPanel();
+   JPanel cmdpanel = new JPanel();
+
+      public static void main(String args[]){
+      new loginForm();
+   }
+
+    private Statement stat;
+    private ResultSet rs;
+    private String query = new String("SELECT* FROM LoginTable");
+        // constructor
+	public  loginForm(){
+            // initialize all GUI components
+            loginFrame= new JFrame("Login Form");
+            loginFrame.getContentPane();
+
+            txt1panel.setLayout(new FlowLayout());
+            txt2panel.setLayout(new FlowLayout());
+            cmdpanel.setLayout(new FlowLayout());
+            //setting the Frame's properties
+            loginFrame.setSize(250,400);
+            loginFrame.setVisible(true);
+            loginFrame.setResizable(false);
+
+
+            jlbUserName = new JLabel("Username");
+            jlbPass = new JLabel("Password");
+            jtfUserName = new JTextField(20);
+            jpfPass = new JPasswordField(20);
+            jbnOK = new JButton("OK");
+            jbnCancel = new JButton("Clear");
+            jbnRegister = new JButton("Register");
+            jbnExit = new JButton("Exit");
+
+            // add GUI components to the JFrame
+            txt1panel.add(jlbUserName,BorderLayout.LINE_START);
+            txt1panel.add(jtfUserName,BorderLayout.LINE_END);
+            loginFrame.add(txt1panel, BorderLayout.NORTH);
+            txt2panel.add(jlbPass,BorderLayout.LINE_START);
+            txt2panel.add(jpfPass,BorderLayout.LINE_END);
+            loginFrame.add(txt2panel, BorderLayout.CENTER);
+            cmdpanel.add(jbnOK);
+            cmdpanel.add(jbnCancel);
+            cmdpanel.add(jbnRegister);
+            cmdpanel.add(jbnExit);
+            loginFrame.add(cmdpanel, BorderLayout.PAGE_END);
+            loginFrame.pack();
+            jbnOK.addActionListener(this);
+            jbnCancel.addActionListener(this);
+            jbnRegister.addActionListener(this);
+            jbnExit.addActionListener(this);
+		getConnection();		//Create Connection to the Database
+	}
+
+	public Connection getConnection(){
+
+		try {
+			Class.forName("sun.jdbc.odbc.JdbcOdbcDriver");
+
+		}
+		catch(java.lang.ClassNotFoundException e) {
+			System.err.print("ClassNotFoundException: ");
+			System.err.println(e.getMessage());
+		}
+
+		try {
+			cn = DriverManager.getConnection(url, userid, pass);
+		}
+		catch(SQLException ex) {
+			System.err.println("SQLException: " + ex.getMessage());
+		}
+
+		return cn;
+	}
+
+      public void actionPerformed(ActionEvent evt){
+          if (evt.getSource()==jbnOK){
+                OkButton();
+          }
+          else if (evt.getSource()==jbnCancel){
+              ClearButton();
+          }
+          else if (evt.getSource()==jbnRegister){
+              RegButton();
+          }
+          else if(evt.getSource()==jbnExit){
+              	        int selection = JOptionPane.showConfirmDialog(null,
+	                    "Want to leave the Program", "ExitBox",
+	                    JOptionPane.YES_NO_OPTION,
+	                    JOptionPane.QUESTION_MESSAGE);
+	        if( selection == JOptionPane.YES_OPTION ) {
+	            System.exit(0);
+	        }
+                else{
+                }
+          }
+      }
+
+    private void ClearButton() {
+        jtfUserName.setText("");
+        jpfPass.setText("");
+    }
+
+    private void OkButton() {
+        try{
+            rs =stat.executeQuery(query);
+            while(rs.next()){
+                if(rs.getString("username").equals(jtfUserName.getText())&& rs.getString("password").equals(jpfPass.getText())){
+                    JOptionPane.showMessageDialog(null, "Login Successful");                 
+                    PatientReg patient = new PatientReg();
+                    patient.init();
+                    patient.buildGUI();
+                                    loginFrame.hide();
+                    
+                }
+                else{
+                    JOptionPane.showMessageDialog(null, "Attempt failed");
+                }
+            }
+        }catch(Exception e){
+            System.err.println(e.getMessage());
+        }
+    }
+
+ 
+   private void RegButton() {
+      	   	username    = jtfUserName.getText();
+                password = jpfPass.getText();
+
+	   	if(username.equals("")){
+	   		JOptionPane.showMessageDialog(null, "Please enter Username.");
+	   	}
+         else{
+
+	 //create a UserInfo object and pass it to loginForm to save it
+         UserInfo user = new UserInfo(username,password);
+         loginForm log = new loginForm();
+	 log.saveDetails(user);
+         JOptionPane.showMessageDialog(null, "User Info Saved");
+         loginFrame.hide();
+         }
+    }
+   public void saveDetails (UserInfo user){
+		try
+		{
+	String sql = "INSERT INTO LoginTable VALUES (?,?) ";
+
+			// Create a Preparedstatement
+ 			PreparedStatement ps = cn.prepareStatement(sql);
+
+			ps.setString(1, user.getUsername());
+			ps.setString(2, user.getPass());
+			ps.executeUpdate();
+		}
+		catch(Exception e){
+			System.err.println(e);
+		}
+
+     }
+
+
+}
